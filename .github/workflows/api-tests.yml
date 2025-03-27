@@ -19,8 +19,8 @@ jobs:
 
       - name: Start MongoDB Manually
         run: |
-          mkdir -p C:\data\db
-          Start-Process -NoNewWindow -FilePath "mongodb-windows-x86_64-6.0.6\bin\mongod.exe" -ArgumentList "--dbpath C:\data\db"
+          mkdir C:\data\db -ErrorAction SilentlyContinue
+          Start-Process -NoNewWindow -FilePath "C:\Program Files\MongoDB\Server\8.0\bin\mongod.exe" -ArgumentList "--dbpath C:\data\db"
         shell: pwsh
 
       - name: Start FastAPI server
