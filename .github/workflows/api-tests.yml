@@ -17,12 +17,6 @@ jobs:
         run: |
           pip install fastapi uvicorn pytest requests pymongo
 
-      - name: Start MongoDB Manually
-        run: |
-          mkdir C:\data\db -ErrorAction SilentlyContinue
-          Start-Process -NoNewWindow -FilePath "C:\Program Files\MongoDB\Server\8.0\bin\mongod.exe" -ArgumentList "--dbpath C:\data\db"
-        shell: pwsh
-
       - name: Start FastAPI server
         run: |
           Start-Process -NoNewWindow -FilePath "python" -ArgumentList "apiserver.py"
