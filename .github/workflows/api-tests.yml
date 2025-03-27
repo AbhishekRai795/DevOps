@@ -1,0 +1,34 @@
+name: API Tests
+
+on: [push, pull_request]  # Triggers on push and pull requests
+
+jobs:
+  test:
+    runs-on: ubuntu-latest  # Use latest Ubuntu as the OS for the runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # Pulls your code from the repo
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install fastapi uvicorn pymongo motor pytest requests python-dotenv fastapi-jwt-auth
+
+      - name: Start MongoDB
+        run: sudo systemctl start mongod  # Starts MongoDB service
+
+      - name: Start FastAPI server
+        run: uvicorn apiserver:app --host 127.0.0.1 --port 8000 &
+        env:
+          PYTHONUNBUFFERED: 1  # Ensures logging messages are shown
+
+      - name: Wait for server to be ready
+        run: sleep 5  # Gives FastAPI time to start
+
+      - name: Run tests
+        run: pytest -v test_api.py  # Runs test cases
