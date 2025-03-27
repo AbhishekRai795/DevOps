@@ -3,8 +3,7 @@ on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-
+    runs-on: windows-latest  # Use Windows runner
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -16,30 +15,19 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt install -y python3-pip
           pip install fastapi uvicorn pytest requests pymongo
 
-      - name: Install MongoDB
+      - name: Start MongoDB (Windows)
         run: |
-          sudo apt update
-          sudo apt install -y mongodb
-          sudo systemctl start mongodb
-          sudo systemctl enable mongodb
-
-      - name: Verify MongoDB is running
-        run: |
-          sudo systemctl status mongodb
-          mongod --version
+          net start MongoDB
+        continue-on-error: true  # Avoid breaking the pipeline if MongoDB is already running
 
       - name: Start FastAPI server
         run: |
-          python3 apiserver.py &
-        env:
-          PYTHONUNBUFFERED: 1
-
+          python apiserver.py &
+      
       - name: Wait for server to be ready
-        run: sleep 5
+        run: sleep 10  # Ensure the server is running
 
       - name: Run tests
         run: pytest automation_test_pytest.py
