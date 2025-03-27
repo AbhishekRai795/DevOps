@@ -32,4 +32,4 @@ jobs:
           sleep 5  # Wait for server to start
 
       - name: Run tests
-        run: pytest testAutomation.py
+        run: python -m pytest test_mongodb.py -v
