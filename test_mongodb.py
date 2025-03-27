@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Get API base URL from environment variable (default to local)
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://0.0.0.0:8000")
 
 # Get MongoDB connection URI from environment variable
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
