@@ -28,7 +28,7 @@ jobs:
 
       - name: Start FastAPI server
         run: |
-          python apiserver.py 
+          python apiserver.py &
           sleep 5  # Wait for server to start
 
       - name: Run tests
