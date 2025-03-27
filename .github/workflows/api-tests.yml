@@ -15,7 +15,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install fastapi uvicorn pytest requests pymongo
+          pip install fastapi uvicorn pytest requests pymongo motor
 
       - name: Start FastAPI server
         run: |
