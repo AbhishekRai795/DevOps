@@ -1,44 +1,41 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from bson import ObjectId
-import motor.motor_asyncio
-from config import collection
-from fastapi_jwt_auth import AuthJWT
-from fastapi import Depends
+from fastapi import FastAPI
 
+# Initialize the FastAPI app
 app = FastAPI()
-class Settings(BaseModel):
-    authjwt_secret_key: str = "secret"
 
-@AuthJWT.load_config
-def get_config():
-    return Settings()
+# Root endpoint
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
 
-@app.post("/login")
-async def login(username: str, password: str, Authorize: AuthJWT = Depends()):
-    if username == "admin" and password == "password":
-        access_token = Authorize.create_access_token(subject=username)
-        return {"access_token": access_token}
-    raise HTTPException(status_code=401, detail="Invalid credentials")
+# Addition endpoint
+@app.get("/add/{num1}/{num2}")
+def add(num1: int, num2: int):
+    """
+    Adds two numbers.
+    Example: /add/2/3 returns {"result": 5}
+    """
+    return {"result": num1 + num2}
 
-@app.get("/protected")
-async def protected_route(Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
-    return {"message": "You are authorized"}
-class Calculation(BaseModel):
-    num1: int
-    num2: int
+# Subtraction endpoint
+@app.get("/subtract/{num1}/{num2}")
+def subtract(num1: int, num2: int):
+    """
+    Subtracts the second number from the first.
+    Example: /subtract/5/3 returns {"result": 2}
+    """
+    return {"result": num1 - num2}
 
-@app.post("/add/")
-async def add_numbers(data: Calculation):
-    result = {"num1": data.num1, "num2": data.num2, "sum": data.num1 + data.num2}
-    insert_result = await collection.insert_one(result)
-    return {"id": str(insert_result.inserted_id), **result}
+# Multiplication endpoint
+@app.get("/multiply/{num1}/{num2}")
+def multiply(num1: int, num2: int):
+    """
+    Multiplies two numbers.
+    Example: /multiply/2/3 returns {"result": 6}
+    """
+    return {"result": num1 * num2}
 
-@app.get("/get_results/")
-async def get_results():
-    results = []
-    async for doc in collection.find():
-        doc["_id"] = str(doc["_id"])
-        results.append(doc)
-    return results
+# Run the app using Uvicorn
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("apiserver:app", host="0.0.0.0", port=8000, reload=True)
