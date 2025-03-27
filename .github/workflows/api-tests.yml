@@ -17,11 +17,6 @@ jobs:
         run: |
           pip install fastapi uvicorn pytest requests pymongo
 
-      - name: Download and Extract MongoDB
-        run: |
-          Invoke-WebRequest -Uri "https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-6.0.6.zip" -OutFile mongodb.zip
-          Expand-Archive -Path mongodb.zip -DestinationPath .
-
       - name: Start MongoDB Manually
         run: |
           mkdir -p C:\data\db
