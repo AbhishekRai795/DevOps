@@ -30,4 +30,4 @@ jobs:
         run: sleep 10  # Ensure the server is running
 
       - name: Run tests
-        run: pytest automation_test_pytest.py
+        run: pytest testAutomation.py
