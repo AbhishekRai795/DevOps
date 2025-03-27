@@ -1,29 +1,32 @@
 name: API Tests
 on: [push, pull_request]
-
 jobs:
   test:
-    runs-on: windows-latest  # Use Windows runner
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
+      
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: "3.10"
-
-      - name: Install dependencies
+      
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3 pipenv
+      
+      - name: Install Python dependencies
         run: |
-          pip install fastapi uvicorn pytest requests pymongo motor
-
+          pipenv install fastapi uvicorn pytest requests
+      
       - name: Start FastAPI server
         run: |
-          Start-Process -NoNewWindow -FilePath "python" -ArgumentList "apiserver.py"
-        shell: pwsh
+          pipenv run python3 apiserver.py &
+        env:
+          PYTHONUNBUFFERED: 1
       
       - name: Wait for server to be ready
-        run: Start-Sleep -Seconds 10  # Ensure the server is running
-
+        run: sleep 5
+      
       - name: Run tests
-        run: pytest automation_test_pytest.py
+        run: pipenv run pytest automation_test_pytest.py
