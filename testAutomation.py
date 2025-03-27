@@ -1,21 +1,37 @@
 import pytest
-import requests
+from httpx import AsyncClient
+from apiserver import app
 
-# Define test cases
-testcases = [
-    ("http://127.0.0.1:8000/add/10/5", 15, "Addition of 10 and 5"),
-    ("http://127.0.0.1:8000/subtract/10/5", 5, "Subtraction of 10 and 5"),
-    ("http://127.0.0.1:8000/multiply/10/5", 50, "Multiplication of 10 and 5"),
-    ("http://127.0.0.1:8000/add/-3/3", 0, "Addition of -3 and 3"),
-    ("http://127.0.0.1:8000/multiply/0/5", 0, "Multiplication by zero"),
-]
+@pytest.mark.asyncio
+async def test_login_success():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.post("/login", params={"username": "admin", "password": "password"})
+    assert response.status_code == 200
+    assert "access_token" in response.json()
 
-@pytest.mark.parametrize("url, expected, description", testcases)
-def test_api(url, expected, description):
-    response = requests.get(url)
-    result = response.json()["result"]
-    assert result == expected, f"{description} FAILED! Expected {expected}, got {result}"
-    print(f"{description} PASSED")
+@pytest.mark.asyncio
+async def test_login_failure():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.post("/login", params={"username": "wrong", "password": "wrong"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid credentials"
 
-if __name__ == "__main__":
-    pytest.main()
+@pytest.mark.asyncio
+async def test_add_numbers():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        data = {"num1": 5, "num2": 7}
+        response = await client.post("/add/", json=data)
+    assert response.status_code == 200
+    assert response.json()["sum"] == 12
+
+@pytest.mark.asyncio
+async def test_protected_route():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        login_response = await client.post("/login", params={"username": "admin", "password": "password"})
+        access_token = login_response.json()["access_token"]
+
+        headers = {"Authorization": f"Bearer {access_token}"}
+        response = await client.get("/protected", headers=headers)
+    
+    assert response.status_code == 200
+    assert response.json()["message"] == "You are authorized"
