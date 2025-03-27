@@ -1,32 +1,31 @@
-name: API Tests
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
-      
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y python3 pipenv
-      
-      - name: Install Python dependencies
-        run: |
-          pipenv install fastapi uvicorn pytest requests
-      
-      - name: Start FastAPI server
-        run: |
-          pipenv run python3 apiserver.py &
-        env:
-          PYTHONUNBUFFERED: 1
-      
-      - name: Wait for server to be ready
-        run: sleep 5
-      
-      - name: Run tests
-        run: pipenv run pytest testAutomation.py
+# Run MongoDB as a service
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - 27017:27017
+
+steps:
+- name: Checkout code
+  uses: actions/checkout@v3
+
+- name: Set up Python
+  uses: actions/setup-python@v3
+  with:
+    python-version: '3.10'
+
+- name: Install dependencies
+  run: |
+    python -m pip install --upgrade pip
+    pip install fastapi uvicorn pytest requests pymongo
+
+- name: Start FastAPI server
+  run: |
+    uvicorn apiserver:app --host 0.0.0.0 --port 8000 &
+    sleep 5  # Wait for server to start
+
+- name: Run tests
+  env:
+    MONGO_URI: mongodb://localhost:27017/
+  run: |
+    pytest test_automation.py
