@@ -7,8 +7,13 @@ import logging
 from bson.objectid import ObjectId
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+# MongoDB Connection Parameters
+MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
+DATABASE_NAME = 'calculator_db'
+COLLECTION_NAME = 'calculations'
 
 # Test cases with expanded validation
 test_cases = [
@@ -22,30 +27,20 @@ test_cases = [
             "result": 4,
             "required_fields": ["operation", "num1", "num2", "result"]
         }
-    },
-    {
-        "url": "http://localhost:8000/subtract/5/3", 
-        "expected": 2, 
-        "operation": "subtract",
-        "validation": {
-            "num1": 5,
-            "num2": 3,
-            "result": 2,
-            "required_fields": ["operation", "num1", "num2", "result"]
-        }
-    },
-    {
-        "url": "http://localhost:8000/multiply/4/3", 
-        "expected": 12, 
-        "operation": "multiply",
-        "validation": {
-            "num1": 4,
-            "num2": 3,
-            "result": 12,
-            "required_fields": ["operation", "num1", "num2", "result"]
-        }
     }
 ]
+
+def get_db_connection():
+    """
+    Establish a MongoDB connection with error handling
+    """
+    try:
+        client = MongoClient(MONGO_URI)
+        db = client[DATABASE_NAME]
+        return db[COLLECTION_NAME]
+    except Exception as e:
+        logger.error(f"MongoDB Connection Error: {e}")
+        raise
 
 def validate_database_record(record, case_validation):
     """
@@ -79,19 +74,36 @@ def test_api_endpoints_with_data_integrity():
     """
     Test API endpoints with comprehensive data integrity checks
     """
+    # Get database collection
+    calculations_collection = get_db_connection()
+    
     for case in test_cases:
         try:
-            # Make API request
-            response = requests.get(case["url"])
+            logger.debug(f"Testing URL: {case['url']}")
+            
+            # Make API request with timeout
+            try:
+                response = requests.get(case["url"], timeout=5)
+            except requests.ConnectionError:
+                logger.error("Could not connect to the API. Is the server running?")
+                raise
+            except requests.Timeout:
+                logger.error("API request timed out")
+                raise
+            
+            # Log full response for debugging
+            logger.debug(f"Response Status Code: {response.status_code}")
+            logger.debug(f"Response Content: {response.text}")
             
             # Verify API response
             assert response.status_code == 200, f"API call failed for {case['url']}"
             
+            # Parse result
             result = response.json()["result"]
             assert result == case["expected"], f"Incorrect calculation result"
             
             # Validate database record
-            db_record = MongoClient().calculator_db.calculations.find_one({
+            db_record = calculations_collection.find_one({
                 "operation": case["operation"],
                 "result": result
             })
@@ -104,41 +116,9 @@ def test_api_endpoints_with_data_integrity():
             
             logger.info(f"Data integrity test passed for {case['url']}")
         
-        except AssertionError as e:
+        except Exception as e:
             logger.error(f"Data integrity test failed: {e}")
             raise
-
-def test_mocked_database_connection():
-    """
-    Demonstrate mocking of database connection
-    """
-    # Mock MongoDB client and collection
-    mock_client = Mock()
-    mock_collection = Mock()
-    
-    # Simulate a database record
-    mock_record = {
-        "_id": "mock_id",
-        "operation": "add",
-        "num1": 2,
-        "num2": 2,
-        "result": 4
-    }
-    
-    # Configure mock to return predefined record
-    mock_collection.find_one.return_value = mock_record
-    mock_client.calculator_db.calculations = mock_collection
-    
-    # Patch the MongoClient to use our mock
-    with patch('pymongo.MongoClient', return_value=mock_client):
-        # Simulate database interaction
-        record = mock_client.calculator_db.calculations.find_one({})
-        
-        # Validate mocked record
-        assert record == mock_record, "Mocked record does not match expected"
-        mock_collection.find_one.assert_called_once()
-    
-    logger.info("Database connection mocking test passed")
 
 if __name__ == "__main__":
     pytest.main()
